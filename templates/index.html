@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecyPrint Dashboard | Smart Extrusion</title>
+    <!-- Premium Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toast.css') }}">
+    <!-- Chart.js for Historical Data -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Socket.IO Client -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="glass-panel" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="logo">
+                <span class="neon-text">RECY</span>PRINT
+                <span id="system-badge" style="margin-left:15px; font-size: 0.9rem; padding: 4px 10px; border-radius: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border);">Standby</span>
+            </div>
+            
+            <div class="header-right" style="display: flex; align-items: center; gap: 2rem;">
+                <a href="/history" style="color: var(--accent-primary); text-decoration: none; font-weight: bold; font-family: var(--font-display); background: rgba(14, 165, 233, 0.1); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--accent-glow); transition: 0.3s;">📊 LOGS & EXPORT</a>
+                
+                <div class="status-indicator">
+                    <div class="dot" id="connection-dot"></div>
+                    <span id="connection-status">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="grid-layout">
+            <!-- Live Process Data -->
+            <section class="panel glass-panel live-data">
+                <h2 class="panel-title">Live Process Data</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon">🔥</div>
+                        <div class="metric-info">
+                            <span class="metric-label">Temperature</span>
+                            <div class="metric-value"><span id="live-temp">--</span> °C</div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">⚙️</div>
+                        <div class="metric-info">
+                            <span class="metric-label">Motor Speed</span>
+                            <div class="metric-value"><span id="live-speed">--</span> %</div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">📏</div>
+                        <div class="metric-info">
+                            <span class="metric-label">Filament Diameter</span>
+                            <div class="metric-value"><span id="live-diameter">--</span> mm</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Remote Control -->
+            <section class="panel glass-panel remote-control">
+                <h2 class="panel-title">Remote Control</h2>
+                
+                <div class="control-group">
+                    <div class="control-header">
+                        <label for="target-temp">Target Temperature</label>
+                        <span class="control-val"><span id="val-target-temp">214</span> °C</span>
+                    </div>
+                    <input type="range" id="target-temp" min="0" max="300" value="214" class="slider neon-slider">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <label for="target-speed">Motor Speed (%)</label>
+                        <span class="control-val"><span id="val-target-speed">60</span> %</span>
+                    </div>
+                    <input type="range" id="target-speed" min="0" max="100" value="60" class="slider neon-slider">
+                </div>
+
+                <div class="action-buttons">
+                    <button id="btn-start" class="btn btn-success glow-effect">START EXTRUSION</button>
+                    <button id="btn-stop" class="btn btn-danger glow-effect">STOP EXTRUSION</button>
+                </div>
+            </section>
+
+            <!-- History Trend -->
+            <section class="panel glass-panel history-trend">
+                <h2 class="panel-title">Temperature Trend (Real-time)</h2>
+                <div class="chart-container">
+                    <canvas id="tempChart"></canvas>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Main Logic -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
