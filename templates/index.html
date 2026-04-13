@@ -10,8 +10,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/toast.css') }}">
     <!-- Chart.js for Historical Data -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Socket.IO Client -->
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <!-- Native MQTT Client (WebSocket bridge) -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body>
     <div id="toast-container"></div>
