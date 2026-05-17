@@ -49,8 +49,8 @@
                     <div class="metric-card">
                         <div class="metric-icon">⚙️</div>
                         <div class="metric-info">
-                            <span class="metric-label">Motor Speed</span>
-                            <div class="metric-value"><span id="live-speed">--</span> %</div>
+                            <span class="metric-label">Motor Speed (0-255)</span>
+                            <div class="metric-value"><span id="live-speed">--</span></div>
                         </div>
                     </div>
                     <div class="metric-card">
@@ -70,17 +70,17 @@
                 <div class="control-group">
                     <div class="control-header">
                         <label for="target-temp">Target Temperature</label>
-                        <span class="control-val"><span id="val-target-temp">214</span> °C</span>
+                        <span class="control-val"><span id="val-target-temp">150</span> °C</span>
                     </div>
-                    <input type="range" id="target-temp" min="0" max="300" value="214" class="slider neon-slider">
+                    <input type="range" id="target-temp" min="0" max="170" value="150" class="slider neon-slider">
                 </div>
 
                 <div class="control-group">
                     <div class="control-header">
-                        <label for="target-speed">Motor Speed (%)</label>
-                        <span class="control-val"><span id="val-target-speed">60</span> %</span>
+                        <label for="target-speed">Motor Speed (0-255)</label>
+                        <span class="control-val"><span id="val-target-speed">150</span></span>
                     </div>
-                    <input type="range" id="target-speed" min="0" max="100" value="60" class="slider neon-slider">
+                    <input type="range" id="target-speed" min="0" max="255" value="150" class="slider neon-slider">
                 </div>
 
                 <div class="action-buttons">

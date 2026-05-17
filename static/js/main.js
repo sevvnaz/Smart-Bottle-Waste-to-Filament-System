@@ -46,7 +46,11 @@ const tempChart = new Chart(ctx, {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-            y: { beginAtZero: false, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+            y: { 
+                min: 0,
+                max: 200,
+                grid: { color: 'rgba(255, 255, 255, 0.05)' } 
+            },
             x: { grid: { display: false } }
         },
         plugins: { legend: { labels: { font: { family: "'Orbitron', sans-serif" } } } },
@@ -102,7 +106,9 @@ mqttClient.on('message', (topic, message) => {
             else if(payload.status === 'Error') badge.style.color = 'var(--danger)';
             else badge.style.color = 'var(--text-muted)';
             
-            if(payload.timestamp) { addData(tempChart, payload.timestamp, payload.temperature); }
+            // Use local time if hardware doesn't provide a timestamp
+            const timeLabel = payload.timestamp || new Date().toLocaleTimeString();
+            addData(tempChart, timeLabel, payload.temperature);
             
             if(payload.is_extruding) {
                 btnStart.style.opacity = '0.5';
@@ -155,7 +161,8 @@ sliderSpeed.addEventListener('change', (e) => {
 sliderSpeed.addEventListener('input', (e) => { valSpeed.innerText = e.target.value; });
 
 btnStart.addEventListener('click', () => {
-    mqttClient.publish(TOPIC_CONTROL, JSON.stringify({ type: 'start_extrusion' }));
+    const currentSpeed = document.getElementById('target-speed').value;
+    mqttClient.publish(TOPIC_CONTROL, JSON.stringify({ type: 'start_extrusion', target_speed: currentSpeed }));
 });
 
 btnStop.addEventListener('click', () => {

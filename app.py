@@ -46,8 +46,8 @@ system_state = {
     'temperature': 25.0,
     'speed': 0.0,
     'diameter': 0.0,
-    'target_temperature': 214.0,
-    'target_speed': 60.0,
+    'target_temperature': 150.0,
+    'target_speed': 150.0,
     'is_extruding': False,
     'status': 'Standby'
 }
@@ -105,13 +105,11 @@ def on_message(client, userdata, msg):
                 if 'target_speed' in payload:
                     system_state['target_speed'] = float(payload['target_speed'])
             elif cmd == 'start_extrusion':
-                if system_state['temperature'] < (system_state['target_temperature'] - 5.0):
-                    client.publish(TOPIC_ALERTS, json.dumps({
-                        'type': 'warning',
-                        'message': 'Hedef sıcaklığa ulaşmadan motor başlatılamaz!'
-                    }))
-                else:
-                    system_state['is_extruding'] = True
+                system_state['is_extruding'] = True
+                client.publish(TOPIC_ALERTS, json.dumps({
+                    'type': 'info',
+                    'message': 'Üretim başlatıldı (Güvenlik kilidi devre dışı).'
+                }))
             elif cmd == 'stop_extrusion':
                 system_state['is_extruding'] = False
 
@@ -254,7 +252,7 @@ def export_csv():
 
         si = StringIO()
         cw = csv.writer(si)
-        cw.writerow(['ID', 'Temperature (C)', 'Motor Speed (%)', 'Filament Diameter (mm)', 'Timestamp'])
+        cw.writerow(['ID', 'Temperature (C)', 'Motor Speed (0-255)', 'Filament Diameter (mm)', 'Timestamp'])
         cw.writerows(rows)
         output = si.getvalue()
         si.close()
@@ -272,7 +270,7 @@ if __name__ == '__main__':
     init_db()
     mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
     mqtt_client.loop_start()
-    threading.Thread(target=esp32_simulator_thread, daemon=True).start()
+    # threading.Thread(target=esp32_simulator_thread, daemon=True).start()
 
     print("Starting RecyPrint MQTT Integration Server on HTTP port 5000...")
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
