@@ -2,80 +2,72 @@
 
 Bu depo, plastik pet şişeleri geri dönüştürerek 3 boyutlu yazıcılar için kullanılabilir filament üreten **RecyPrint** bitirme (Capstone) projesinin **Yazılım & IoT (Internet of Things)** arayüz kodlarını barındırmaktadır.
 
-Proje, temelde **Mekatronik** (donanımsal parçalama, eritme, çekme, soğutma işlemleri) ve **Yazılım** (bu süreçlerin anlık izlenmesi, loglanması ve uzaktan kontrol edilmesi) olmak üzere iki ana kola ayrılmış, disiplinlerarası bir makine otomasyon sistemidir.
+Proje, temelde **Mekatronik** (donanımsal parçalama, eritme, çekme, soğutma işlemleri) ve **Yazılım** (bu süreçlerin anlık izlenmesi, loglanması ve bulut üzerinden uzaktan kontrol edilmesi) olmak üzere iki ana kola ayrılmış, disiplinlerarası bir makine otomasyon sistemidir.
 
 ---
 
-## 🎯 Projenin Temel İsterleri
-Proje raporunda sistemden beklenen yazılımsal gereksinimler şunlardır:
-- **Haberleşme:** Sensör ve kontrolcünün (ESP32) bir bilgisayar/sunucu ile haberleşmesi.
-- **Canlı Sensör Takibi:** Sıcaklık (Temperature), Motor Hızı (Speed) ve Çap (Filament Diameter) değerlerinin dashboard üzerinden okunması.
-- **Otomatik Güvenlik Doğrulaması:** 180°C limitini veya belirlenen kritik sıcaklık eşiklerini geçince acil durum (Emergency Stop) başlatılması.
-- **Uzaktan Kontrol (Remote Control):** Hedef sıcaklığın, motor hızının ayarlanabilmesi ve motorun başlatılıp (Start) durdurulabilmesi (Stop).
-- **Loglama:** Geçmiş verilerin sonradan incelenebilmesi için kalıcı bir veritabanında (SQLite) tutulması ve listelenmesi.
+## 🎯 Projenin Ulaştığı Son Nokta (Current Status)
+Yazılım ekibi olarak projenin tüm hedeflerini tamamladık ve donanım entegrasyonunu başarıyla gerçekleştirdik:
+- **Bulut Veritabanı (Cloud DB):** Lokal SQLite yerine çok daha güvenli ve profesyonel olan **AWS Neon.tech (PostgreSQL)** veritabanına geçiş yapıldı.
+- **Modern Haberleşme (MQTT & WebSocket):** Basit REST API yerine gecikmesiz, anında tepki veren **Native MQTT (broker.emqx.io)** ve WebSocket mimarisi kullanıldı.
+- **Akıllı Donanım Köprüsü (bridge.py):** ESP32'den gelen verileri (JSON veya düz metin fark etmeksizin) algılayıp, Regex ile ayrıştırarak buluta aktaran akıllı bir Python köprüsü yazıldı.
+- **Premium Dashboard:** Sıradan bir panel yerine "Glassmorphism", Dark-Mode ve "Neon" aksan tasarımlarına sahip profesyonel bir arayüz kodlandı. Isıtıcı PWM değerleri ve Motor hızı donanıma uygun olarak (0-255) ayarlandı.
+- **Log & Excel Export Sistemi:** Anlık olarak yazılan grafik (Chart.js) noktaları, `/history` rotasında tablo ile listelenmiş ve saniyeler içerisinde **CSV (Excel)** formatında indirilerek dışarı aktarılabilir hale getirilmiştir.
 
 ---
 
-## 🚀 Yazılım Ekibi Olarak Biz Ne Yaptık?
-Mekatronik prototipi henüz hazır olmadığı halde yazılım tabanı **simülatör mekanizması ile %100 oranında tamamlanmış, Endüstri 4.0** normlarında çalışır hale getirilmiştir. 
+## 🏗️ Sistem Mimarisi (Architecture)
 
-**Öne Çıkan Geliştirmeler:**
-1. **Modern Haberleşme (WebSocket):** Dokümandaki basit REST API yerine gecikmesiz, anında tepki veren gelişmiş **Flask-SocketIO** mimarisi kullanıldı.
-2. **Premium Dashboard:** Sıradan bir panel yerine "Glassmorphism", Dark-Mode ve "Neon" aksan tasarımlarına sahip profesyonel ve duyarlı bir arayüz HTML/CSS dosyaları kodlandı.
-3. **Simülatör & İş Zekası (İnterlok Mantığı):** Arka planda donanım varmış gibi davranan bir Python simülatörü(`esp32_simulator_thread`) yazıldı. *Uyarı*: Bu simülatör sayesinde hedef sıcaklığa gelmeden arayüz motorun başlatılmasına izin vermez, aşırı çap sapması(±0.05mm) algılarsa motor hızı ile oto-düzeltme sağlar ve kritik seviyede "Kırmızı Alarm" (Emergency Stop) vererek devreyi kapatır.
-4. **Log & Excel Export Sistemi:** SQLite sayesinde anlık olarak yazılan grafik (Chart.js) noktaları, `/history` rotasında tablo ile listelenmiş ve saniyeler içerisinde **CSV(Excel)** formatında indirilerek dışarı aktarılabilir hale getirilmiştir.
+Projedeki veri akışı Endüstri 4.0 IoT standartlarına uygun olarak tasarlanmıştır:
+1. **Donanım (ESP32):** Isıtıcıyı (PID ile) ve motoru (L298N) kontrol eder. Sensör verilerini seri porttan (USB) bilgisayara gönderir.
+2. **Köprü Yazılımı (bridge.py):** Bilgisayarda çalışır. ESP32'den gelen verileri okur, formatlar ve **MQTT Bulut Sunucusuna** fırlatır.
+3. **Web Arayüzü (Dashboard):** Bulut sunucusuna WebSocket ile bağlanarak verileri canlı (real-time) çeker, grafiğe döker ve kullanıcının girdiği hız/sıcaklık komutlarını bulut üzerinden donanıma iletir.
+4. **Backend (app.py):** Akıllı arayüzü sunar ve periyodik olarak MQTT'den veri çekip Neon PostgreSQL veritabanına loglar.
 
 ---
 
-## 🔧 Mekatronik Ekibi İçin Entegrasyon Rehberi: "Gerçek Cihaza Geçiş"
-Donanım (Isıtıcı fişek, motor, sensörler) ve ESP32 mikrokontrolcü kablolamaları bittikten sonra yazılım ile mekatroniğin birleştirilmesi için şu **3 adım** uygulanmalıdır:
+## 🔧 Mekatronik Ekibi İçin Entegrasyon Rehberi
 
-### 1- Simülatörü Devre Dışı Bırakmak
-Kodda cihaz yokken anlık veri fırlatan fonkisyonu durdurmalısınız. 
-`app.py` dosyasındaki dosyasının en altına gidin ve aşağıdaki kodu bulun:
-```python
-# socketio.start_background_task(esp32_simulator_thread)  <-- BAŞINA DİYEZ KOYARAK KAPATIN
-```
+Donanım entegrasyonu için mekatronik ekibinin yapması gereken tek şey, ESP32'yi bilgisayara bağlayıp bilgisayarda **`bridge.py`** dosyasını çalıştırmaktır.
 
-### 2- ESP32'den Veri Göndermek
-ESP32 (C++/ArduinoIDE) kodunuz içinden Socket.IO kütüphanesini kullanarak `sensor_update` olayına sensör ölçümlerini atmalısınız:
+### ESP32 Kod Çıktısı (Serial Print) Ne Olmalı?
+`bridge.py` yazılımımız oldukça akıllıdır ve iki farklı durumu da otomatik algılar:
+
+**Seçenek 1 (Önerilen - JSON Formatı):**
+ESP32 kodunuz sensör verilerini şu formatta yazdırmalıdır:
 ```json
-{
-  "temperature": 210.5,
-  "speed": 60.0,
-  "diameter": 1.76,
-  "target_temperature": 215.0,
-  "target_speed": 60.0,
-  "is_extruding": true,
-  "status": "Extruding",
-  "timestamp": "14:30:22"
-}
+{"temperature": 25.0, "speed": 150, "diameter": 1.75, "status": "Extruding", "is_extruding": true}
 ```
-*(Alternatif olarak Socket istemiyorsanız `app.py`'da basit bir POST `/update` route'u da mevcuttur).*
 
-### 3- Arayüzden Gelen Komutları Almak
-Kullanıcı web sayfasından slider'ları çektiğinde veya **Start/Stop** bastığında Flask sunucusu size geri komut yollayacaktır. ESP32 tarafında bunu dinleyip Motor veya Relay'e güç verin/kapatın:
-```json
-{
-  "type": "update_targets",
-  "target_temperature": 214,
-  "target_speed": 60
-}
+**Seçenek 2 (Eski V1.2 Metin Formatı):**
+Eğer ESP32 şu an eski kodu çalıştırıyorsa ve ekrana aşağıdaki gibi düz metin basıyorsa, `bridge.py` bunu Regex ile algılayıp kendisi JSON'a çevirecektir. Kod değişikliğine gerek yoktur!
+```text
+Temp: [25.0 / 0.0°C] | Heater Pwr: 0% | Motor Spd: 150
 ```
+
+### Dashboard'dan ESP32'ye Giden Komutlar
+Siz Dashboard üzerinden butonlara bastığınızda veya kaydırıcıyı çektiğinizde, `bridge.py` ESP32'ye doğrudan makine dilinde şu komutları yollar:
+- `T150` -> Hedef sıcaklığı 150°C yap.
+- `M200` -> Motor hızını 200 (PWM: 0-255) yap.
+- `0` -> Acil Durdurma (E-STOP). Tüm sistemi kapat.
 
 ---
 
 ## ⚙️ Kurulum ve Çalıştırma
 
-Projeyi lokal bilgisayarınızda çalıştırmak için:
+Projeyi bilgisayarınızda çalıştırmak için:
 
-1. Python yüklü olmalıdır. İlgili kütüphaneleri kurun:
+1. Gerekli Python kütüphanelerini kurun:
    ```bash
    pip install -r requirements.txt
    ```
-2. Ana Flask sunucu dosyasını başlatın:
+2. Ana Flask sunucu dosyasını başlatın (Veritabanı loglama ve arayüz sunumu için):
    ```bash
    python app.py
    ```
-3. Herhangi bir internet tarayıcısından (Chrome, Safari vs.) adrese gidin:
+3. ESP32'yi USB ile bilgisayara bağlayın ve köprü yazılımını başlatın:
+   ```bash
+   python bridge.py
+   ```
+4. Herhangi bir internet tarayıcısından adres çubuğuna giderek arayüze ulaşın:
    **http://localhost:5000**
