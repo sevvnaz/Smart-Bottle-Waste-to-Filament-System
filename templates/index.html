@@ -67,25 +67,17 @@
             <section class="panel glass-panel remote-control">
                 <h2 class="panel-title">Remote Control</h2>
                 
-                <div class="control-group">
-                    <div class="control-header">
-                        <label for="target-temp">Target Temperature</label>
-                        <span class="control-val"><span id="val-target-temp">150</span> °C</span>
-                    </div>
-                    <input type="range" id="target-temp" min="0" max="170" value="150" class="slider neon-slider">
+                <div class="auto-mode-banner" style="background: rgba(14, 165, 233, 0.05); border: 1px dashed var(--accent-glow); padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                    <span style="font-family: var(--font-display); font-size: 0.9rem; color: var(--accent-primary); letter-spacing: 1px; display: block; font-weight: bold;">AUTOMATIC MODE ACTIVATED</span>
+                    <span style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-top: 5px;">Temp: 185°C | Target Dia: 1.75mm</span>
                 </div>
 
-                <div class="control-group">
-                    <div class="control-header">
-                        <label for="target-speed">Motor Speed (0-255)</label>
-                        <span class="control-val"><span id="val-target-speed">150</span></span>
+                <div class="action-buttons" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <div style="display: flex; gap: 0.5rem; width: 100%;">
+                        <button id="btn-start" class="btn btn-success glow-effect" style="flex: 1;">START EXTRUSION</button>
+                        <button id="btn-stop" class="btn btn-danger glow-effect" style="flex: 1;">STOP EXTRUSION</button>
                     </div>
-                    <input type="range" id="target-speed" min="0" max="255" value="150" class="slider neon-slider">
-                </div>
-
-                <div class="action-buttons">
-                    <button id="btn-start" class="btn btn-success glow-effect">START EXTRUSION</button>
-                    <button id="btn-stop" class="btn btn-danger glow-effect">STOP EXTRUSION</button>
+                    <button id="btn-tare" class="btn glow-effect" style="width: 100%; background: rgba(14, 165, 233, 0.15); border: 1px solid var(--accent-glow); color: var(--accent-primary);">TARE DIAMETER GAUGE (Z)</button>
                 </div>
             </section>
 

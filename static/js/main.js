@@ -13,14 +13,11 @@ const liveTemp = document.getElementById('live-temp');
 const liveSpeed = document.getElementById('live-speed');
 const liveDiameter = document.getElementById('live-diameter');
 
-const sliderTemp = document.getElementById('target-temp');
-const valTemp = document.getElementById('val-target-temp');
-
-const sliderSpeed = document.getElementById('target-speed');
-const valSpeed = document.getElementById('val-target-speed');
+// Sliders removed for Automatic Mode
 
 const btnStart = document.getElementById('btn-start');
 const btnStop = document.getElementById('btn-stop');
+const btnTare = document.getElementById('btn-tare');
 
 // Chart Setup
 const ctx = document.getElementById('tempChart').getContext('2d');
@@ -78,6 +75,13 @@ mqttClient.on('connect', () => {
     mqttClient.subscribe(TOPIC_TELEMETRY);
     mqttClient.subscribe(TOPIC_ALERTS);
     console.log("MQTT Client Subscribed successfully.");
+
+    // Sync initial UI values with the ESP32 on startup (Auto Mode: T185, M125)
+    mqttClient.publish(TOPIC_CONTROL, JSON.stringify({
+        type: 'update_targets',
+        target_temperature: 185,
+        target_speed: 125
+    }));
 });
 
 mqttClient.on('error', (err) => {
@@ -145,26 +149,18 @@ mqttClient.on('message', (topic, message) => {
 
 
 // === USER INTERACTIONS -> PUBLISHING TO MQTT ===
-sliderTemp.addEventListener('change', (e) => {
-    const val = e.target.value;
-    valTemp.innerText = val;
-    mqttClient.publish(TOPIC_CONTROL, JSON.stringify({ type: 'update_targets', target_temperature: val }));
-});
-// Using slider input for pure visual, but change for publishing limits network usage
-sliderTemp.addEventListener('input', (e) => { valTemp.innerText = e.target.value; });
-
-sliderSpeed.addEventListener('change', (e) => {
-    const val = e.target.value;
-    valSpeed.innerText = val;
-    mqttClient.publish(TOPIC_CONTROL, JSON.stringify({ type: 'update_targets', target_speed: val }));
-});
-sliderSpeed.addEventListener('input', (e) => { valSpeed.innerText = e.target.value; });
-
 btnStart.addEventListener('click', () => {
-    const currentSpeed = document.getElementById('target-speed').value;
-    mqttClient.publish(TOPIC_CONTROL, JSON.stringify({ type: 'start_extrusion', target_speed: currentSpeed }));
+    mqttClient.publish(TOPIC_CONTROL, JSON.stringify({ 
+        type: 'start_extrusion', 
+        target_speed: 125,
+        target_temperature: 185
+    }));
 });
 
 btnStop.addEventListener('click', () => {
     mqttClient.publish(TOPIC_CONTROL, JSON.stringify({ type: 'stop_extrusion' }));
+});
+
+btnTare.addEventListener('click', () => {
+    mqttClient.publish(TOPIC_CONTROL, JSON.stringify({ type: 'tare_gauge' }));
 });
