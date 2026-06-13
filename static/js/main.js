@@ -1,5 +1,5 @@
 // Pure Native MQTT connection via WebSockets (Browser -> Public MQTT Broker)
-const mqttClient = mqtt.connect('ws://broker.emqx.io:8083/mqtt');
+const mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
 const TOPIC_TELEMETRY = "recyprint/test/sensor_data";
 const TOPIC_CONTROL   = "recyprint/test/control";
