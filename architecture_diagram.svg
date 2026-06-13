@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 650" width="100%" height="100%" style="background-color: #ffffff; font-family: Arial, sans-serif;">
+  <!-- Definitions for arrows -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333333"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#111827">RecyPrint System Software Architecture</text>
+
+  <!-- Web Dashboard -->
+  <rect x="300" y="70" width="200" height="60" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="400" y="95" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e3a8a">Web Dashboard</text>
+  <text x="400" y="115" text-anchor="middle" font-size="12" fill="#1e3a8a">(HTML / CSS / JS)</text>
+
+  <!-- Flask Backend API -->
+  <rect x="80" y="220" width="200" height="60" rx="8" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+  <text x="180" y="245" text-anchor="middle" font-size="14" font-weight="bold" fill="#065f46">Flask Backend API</text>
+  <text x="180" y="265" text-anchor="middle" font-size="12" fill="#065f46">(app.py)</text>
+
+  <!-- Database Cylinders (Neon & SQLite) -->
+  <path d="M 80,410 C 80,395 280,395 280,410 L 280,470 C 280,485 80,485 80,470 Z" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <ellipse cx="180" cy="410" rx="100" ry="15" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <text x="180" y="440" text-anchor="middle" font-size="13" font-weight="bold" fill="#334155">Neon PostgreSQL (Cloud)</text>
+  <text x="180" y="460" text-anchor="middle" font-size="12" fill="#475569">&amp; SQLite (Local Fallback)</text>
+
+  <!-- EMQX MQTT Broker (Cloud) -->
+  <polygon points="580,170 680,220 580,270 480,220" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
+  <text x="580" y="215" text-anchor="middle" font-size="14" font-weight="bold" fill="#7c2d12">EMQX MQTT Broker</text>
+  <text x="580" y="235" text-anchor="middle" font-size="12" fill="#7c2d12">(Cloud Public Broker)</text>
+
+  <!-- Python MQTT Serial Bridge -->
+  <rect x="480" y="380" width="200" height="60" rx="8" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
+  <text x="580" y="405" text-anchor="middle" font-size="14" font-weight="bold" fill="#581c87">Python MQTT Bridge</text>
+  <text x="580" y="425" text-anchor="middle" font-size="12" fill="#581c87">(bridge.py Middleware)</text>
+
+  <!-- ESP32 Microcontroller -->
+  <polygon points="490,520 700,520 680,580 470,580" fill="#fef2f2" stroke="#ef4444" stroke-width="2"/>
+  <text x="585" y="545" text-anchor="middle" font-size="14" font-weight="bold" fill="#7f1d1d">ESP32 Microcontroller</text>
+  <text x="585" y="565" text-anchor="middle" font-size="12" fill="#7f1d1d">(Hardware Edge)</text>
+
+  <!-- Connections and lines -->
+
+  <!-- Web Dashboard <-> Flask (HTTP REST) -->
+  <path d="M 320,130 L 220,215" stroke="#333333" stroke-width="1.5" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+  <text x="235" y="160" font-size="11" fill="#444444" transform="rotate(-40, 235, 160)">HTTP/REST (Logs &amp; Export)</text>
+
+  <!-- Web Dashboard <-> MQTT Broker (WSS) -->
+  <path d="M 480,130 L 550,165" stroke="#3b82f6" stroke-dasharray="4,4" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+  <text x="535" y="140" font-size="11" font-weight="bold" fill="#2563eb" transform="rotate(26, 535, 140)">WSS (Live Data / Control)</text>
+
+  <!-- Flask -> DB (SQL Queries) -->
+  <path d="M 180,280 L 180,385" stroke="#333333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="190" y="340" font-size="11" fill="#444444">SQL Queries &amp; Caching</text>
+
+  <!-- Flask -> MQTT Broker (Subscribe) -->
+  <path d="M 280,250 L 485,225" stroke="#333333" stroke-width="1.5" marker-start="url(#arrow)"/>
+  <text x="310" y="235" font-size="11" fill="#444444" transform="rotate(-7, 310, 235)">Subscribe (for Logging)</text>
+
+  <!-- MQTT Broker <-> Bridge -->
+  <path d="M 580,275 L 580,375" stroke="#333333" stroke-width="1.5" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+  <text x="590" y="330" font-size="11" fill="#444444">Publish / Subscribe (WSS)</text>
+
+  <!-- Bridge <-> ESP32 (USB Serial JSON) -->
+  <path d="M 580,440 L 580,515" stroke="#333333" stroke-width="1.5" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+  <text x="590" y="485" font-size="11" fill="#444444">USB Serial (JSON Telemetry)</text>
+
+</svg>

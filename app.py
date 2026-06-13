@@ -7,7 +7,8 @@ import json
 import sqlite3
 from io import StringIO
 
-from flask import Flask, render_template, jsonify, Response
+from flask import Flask, render_template, jsonify, Response, request, session, redirect, url_for
+from functools import wraps
 import paho.mqtt.client as mqtt
 import psycopg2
 from dotenv import load_dotenv
@@ -16,6 +17,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "recyprint-default-secret-key-12345")
+
 
 DB_CONFIG = {
     "host": os.environ.get("DB_HOST"),
@@ -290,17 +293,57 @@ def esp32_simulator_thread():
 
 
 # === FLASK ROUTES ===
+
+# Login Required Decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        expected_user = os.environ.get("DASHBOARD_USER", "admin")
+        expected_password = os.environ.get("DASHBOARD_PASSWORD", "recyprint2026")
+        
+        if username == expected_user and password == expected_password:
+            session['logged_in'] = True
+            session.permanent = True
+            return redirect(url_for('index'))
+        else:
+            error = 'Invalid username or password'
+            
+    return render_template('login.html', error=error)
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
 
 @app.route('/history')
+@login_required
 def history_page():
     return render_template('history.html')
 
 
 @app.route('/api/logs')
+@login_required
 def get_logs():
     try:
         conn = get_db_connection()
@@ -327,6 +370,7 @@ def get_logs():
 
 
 @app.route('/export/csv')
+@login_required
 def export_csv():
     try:
         conn = get_db_connection()
