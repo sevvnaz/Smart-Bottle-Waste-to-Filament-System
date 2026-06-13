@@ -8,9 +8,9 @@ import paho.mqtt.client as mqtt
 SERIAL_PORT = 'COM6' 
 BAUD_RATE = 115200
 MQTT_BROKER = "broker.emqx.io"
-TOPIC_TELEMETRY = "recyprint/test/sensor_data"
-TOPIC_CONTROL = "recyprint/test/control"
-TOPIC_ALERTS = "recyprint/test/alerts"
+TOPIC_TELEMETRY = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/sensor_data"
+TOPIC_CONTROL = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/control"
+TOPIC_ALERTS = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/alerts"
 
 # --- OTOMATİK ÇAP KONTROL SİSTEMİ DEĞİŞKENLERİ ---
 auto_mode = False

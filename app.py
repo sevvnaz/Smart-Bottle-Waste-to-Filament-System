@@ -41,9 +41,9 @@ def get_db_connection():
 # === MQTT CONFIGURATION ===
 MQTT_BROKER = "broker.emqx.io"
 MQTT_PORT = 1883
-TOPIC_TELEMETRY = "recyprint/test/sensor_data"
-TOPIC_CONTROL = "recyprint/test/control"
-TOPIC_ALERTS = "recyprint/test/alerts"
+TOPIC_TELEMETRY = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/sensor_data"
+TOPIC_CONTROL = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/control"
+TOPIC_ALERTS = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/alerts"
 
 mqtt_client = mqtt.Client(client_id="recyprint_backend_logger", protocol=mqtt.MQTTv311)
 

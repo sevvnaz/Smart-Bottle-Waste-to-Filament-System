@@ -1,9 +1,9 @@
 // Pure Native MQTT connection via WebSockets (Browser -> Public MQTT Broker)
 const mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
-const TOPIC_TELEMETRY = "recyprint/test/sensor_data";
-const TOPIC_CONTROL   = "recyprint/test/control";
-const TOPIC_ALERTS    = "recyprint/test/alerts";
+const TOPIC_TELEMETRY = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/sensor_data";
+const TOPIC_CONTROL   = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/control";
+const TOPIC_ALERTS    = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/alerts";
 
 // UI Elements
 const dot = document.getElementById('connection-dot');
