@@ -1,3 +1,4 @@
+import os
 import time
 import threading
 import random
@@ -9,16 +10,20 @@ from io import StringIO
 from flask import Flask, render_template, jsonify, Response
 import paho.mqtt.client as mqtt
 import psycopg2
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 
 DB_CONFIG = {
-    "host": "ep-weathered-feather-amar8dcw-pooler.c-5.us-east-1.aws.neon.tech",
-    "port": 5432,
-    "database": "neondb",
-    "user": "neondb_owner",
-    "password": "npg_yjHJ8UOgCu0t",
-    "sslmode": "require"
+    "host": os.environ.get("DB_HOST"),
+    "port": int(os.environ.get("DB_PORT", 5432)),
+    "database": os.environ.get("DB_NAME"),
+    "user": os.environ.get("DB_USER"),
+    "password": os.environ.get("DB_PASSWORD"),
+    "sslmode": os.environ.get("DB_SSLMODE", "require")
 }
 
 
