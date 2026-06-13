@@ -168,6 +168,7 @@ header .logo {
 /* Remote Control */
 .remote-control {
     grid-column: span 4;
+    align-self: start;
 }
 
 @media (max-width: 1024px) {
@@ -251,7 +252,7 @@ header .logo {
 /* Chart Panel */
 .history-trend {
     grid-column: span 8;
-    min-height: 350px;
+    min-height: 650px;
     display: flex;
     flex-direction: column;
 }

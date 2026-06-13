@@ -3,6 +3,7 @@ import threading
 import random
 import csv
 import json
+import sqlite3
 from io import StringIO
 
 from flask import Flask, render_template, jsonify, Response
@@ -70,19 +71,101 @@ def init_db():
     conn.close()
 
 
-def log_sensor_data(temp, speed, diameter):
+def init_local_sqlite():
+    try:
+        conn = sqlite3.connect('local_cache.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS buffered_data (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                temperature REAL,
+                speed REAL,
+                diameter REAL,
+                timestamp TEXT
+            )
+        ''')
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Local SQLite Init Error: {e}")
+
+
+def save_to_local_sqlite(temp, speed, diameter, timestamp_str):
+    try:
+        conn = sqlite3.connect('local_cache.db')
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO buffered_data (temperature, speed, diameter, timestamp) VALUES (?, ?, ?, ?)',
+            (temp, speed, diameter, timestamp_str)
+        )
+        conn.commit()
+        conn.close()
+        print(f"💾 [SQLite Tamponu] Veri lokal veritabanına yedeklendi: Temp={temp}°C, Spd={speed}, Dia={diameter}mm, Time={timestamp_str}")
+    except Exception as e:
+        print(f"Local SQLite Save Error: {e}")
+
+
+def log_sensor_data(temp, speed, diameter, timestamp_str=None):
+    if timestamp_str is None:
+        timestamp_str = time.strftime('%Y-%m-%d %H:%M:%S')
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            'INSERT INTO sensor_data (temperature, speed, diameter) VALUES (%s, %s, %s)',
-            (temp, speed, diameter)
+            'INSERT INTO sensor_data (temperature, speed, diameter, timestamp) VALUES (%s, %s, %s, %s)',
+            (temp, speed, diameter, timestamp_str)
         )
         conn.commit()
         cursor.close()
         conn.close()
     except Exception as e:
-        print(f"DB Error: {e}")
+        print(f"Postgres DB Error (Lokal SQLite tamponuna aktarılıyor): {e}")
+        save_to_local_sqlite(temp, speed, diameter, timestamp_str)
+
+
+def offline_sync_thread():
+    while True:
+        time.sleep(15)  # Her 15 saniyede bir eşitlemeyi dene
+        try:
+            conn_local = sqlite3.connect('local_cache.db')
+            cursor_local = conn_local.cursor()
+            cursor_local.execute('SELECT id, temperature, speed, diameter, timestamp FROM buffered_data ORDER BY id ASC')
+            rows = cursor_local.fetchall()
+            
+            if not rows:
+                conn_local.close()
+                continue
+                
+            print(f"🔄 [Eşitleme] Lokal veritabanında {len(rows)} adet bekleyen veri var. Buluta aktarılmaya çalışılıyor...")
+            
+            conn_cloud = get_db_connection()
+            cursor_cloud = conn_cloud.cursor()
+            
+            for row in rows:
+                row_id, temp, speed, dia, ts = row
+                cursor_cloud.execute(
+                    'INSERT INTO sensor_data (temperature, speed, diameter, timestamp) VALUES (%s, %s, %s, %s)',
+                    (temp, speed, dia, ts)
+                )
+            
+            conn_cloud.commit()
+            cursor_cloud.close()
+            conn_cloud.close()
+            
+            # Bulut kaydı başarılıysa lokal tamponu temizle
+            cursor_local.execute('DELETE FROM buffered_data')
+            conn_local.commit()
+            conn_local.close()
+            print(f"✅ [Eşitleme] {len(rows)} adet tampon veri başarıyla bulut veritabanına aktarıldı!")
+            
+        except Exception as e:
+            # Eşitleme başarısız (örn: internet hala yok)
+            if 'conn_local' in locals() and conn_local:
+                try:
+                    conn_local.close()
+                except Exception:
+                    pass
+            print(f"🔄 [Eşitleme] Bulut veritabanına erişilemedi (İnternet bağlantısı yok): {e}")
 
 
 # === MQTT CALLBACKS ===
@@ -268,8 +351,12 @@ def export_csv():
 
 if __name__ == '__main__':
     init_db()
+    init_local_sqlite()
     mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
     mqtt_client.loop_start()
+    
+    # Offline senkronizasyon thread'ini başlat
+    threading.Thread(target=offline_sync_thread, daemon=True).start()
     # threading.Thread(target=esp32_simulator_thread, daemon=True).start()
 
     print("Starting RecyPrint MQTT Integration Server on HTTP port 5000...")

@@ -55,6 +55,38 @@ const tempChart = new Chart(ctx, {
     }
 });
 
+const ctxDia = document.getElementById('diaChart').getContext('2d');
+const diaChart = new Chart(ctxDia, {
+    type: 'line',
+    data: {
+        labels: [], // Timestamps
+        datasets: [{
+            label: 'Filament Diameter (mm)',
+            data: [],
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: { 
+                min: 0,
+                max: 2.5,
+                grid: { color: 'rgba(255, 255, 255, 0.05)' } 
+            },
+            x: { grid: { display: false } }
+        },
+        plugins: { legend: { labels: { font: { family: "'Orbitron', sans-serif" } } } },
+        animation: { duration: 0 }
+    }
+});
+
 function addData(chart, label, data) {
     chart.data.labels.push(label);
     chart.data.datasets.forEach((dataset) => { dataset.data.push(data); });
@@ -113,6 +145,7 @@ mqttClient.on('message', (topic, message) => {
             // Use local time if hardware doesn't provide a timestamp
             const timeLabel = payload.timestamp || new Date().toLocaleTimeString();
             addData(tempChart, timeLabel, payload.temperature);
+            addData(diaChart, timeLabel, payload.diameter);
             
             if(payload.is_extruding) {
                 btnStart.style.opacity = '0.5';
