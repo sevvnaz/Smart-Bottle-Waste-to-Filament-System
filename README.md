@@ -16,6 +16,7 @@ Yazılım ekibi olarak projenin tüm hedeflerini tamamladık ve donanım entegra
 - **Akıllı Donanım Köprüsü (bridge.py):** ESP32'den gelen verileri (JSON veya düz metin fark etmeksizin) algılayıp, Regex ile ayrıştırarak buluta aktaran akıllı bir Python köprüsü yazıldı.
 - **Premium Sadeleştirilmiş Dashboard:** Sıradan bir panel yerine "Glassmorphism", Dark-Mode ve "Neon" aksan tasarımlarına sahip profesyonel bir arayüz kodlandı. Manuel karmaşıklığı önlemek adına sıcaklık ve hız sürgüleri kaldırılarak sistem tamamen otonom hale getirildi.
 - **Log & Excel Export Sistemi:** Anlık olarak yazılan grafik (Chart.js) noktaları, `/history` rotasında tablo ile listelenmiş ve saniyeler içerisinde **CSV (Excel)** formatında indirilerek dışarı aktarılabilir hale getirilmiştir.
+- **Kullanıcı Giriş & Güvenlik Sistemi (Authentication):** Dashboard arayüzünün yetkisiz kişilerden korunması için Flask Session tabanlı kullanıcı giriş sistemi entegre edilmiştir. Giriş bilgileri çevre değişkenleri (`.env`) üzerinden okunur.
 
 ---
 
@@ -66,16 +67,24 @@ Projeyi bilgisayarınızda çalıştırmak için:
    ```bash
    pip install -r requirements.txt
    ```
-2. Ana Flask sunucu dosyasını başlatın (Veritabanı loglama ve arayüz sunumu için):
+2. Proje ana dizininde bir `.env` dosyası oluşturup aşağıdaki gibi kimlik bilgilerinizi tanımlayın:
+   ```env
+   FLASK_SECRET_KEY=recyprint-super-secret-key-9988
+   DASHBOARD_USER=admin
+   DASHBOARD_PASSWORD=recyprint2026
+   ```
+   *(Eğer `.env` dosyası oluşturulmazsa sistem otomatik olarak yedek bilgilerle (`admin` / `recyprint2026`) çalışmaya devam edecektir).*
+3. Ana Flask sunucu dosyasını başlatın (Veritabanı loglama, arayüz sunumu ve oturum kontrolü için):
    ```bash
    python app.py
    ```
-3. ESP32'yi USB ile bilgisayara bağlayın ve köprü yazılımını başlatın:
+4. ESP32'yi USB ile bilgisayara bağlayın ve köprü yazılımını başlatın:
    ```bash
    python bridge.py
    ```
-4. Herhangi bir internet tarayıcısından adres çubuğuna giderek arayüze ulaşın:
-   **http://localhost:5000**
+5. Herhangi bir internet tarayıcısından adres çubuğuna giderek arayüze ulaşın:
+   **http://localhost:5000**  
+   *(Sistem sizi otomatik olarak güvenli giriş ekranına yönlendirecektir).*
 
 ---
 <br><br>
@@ -98,6 +107,7 @@ As the software team, we have accomplished all project objectives and successful
 - **Smart Hardware Bridge (bridge.py):** Developed a smart Python bridge that automatically detects incoming data from the ESP32 (whether in JSON or plain text), parses it using Regex, and pushes it to the cloud.
 - **Premium Simplified Dashboard:** Designed a professional interface with "Glassmorphism," Dark-Mode, and "Neon" accents. Sliders for temperature and motor speed were removed to keep the system fully autonomous and user-friendly.
 - **Logging & Excel Export System:** Real-time chart data (Chart.js) is instantly tabulated in the `/history` route and can be exported as a **CSV (Excel)** file in seconds.
+- **Secure User Authentication System:** Integrated a Flask session-based authentication system to protect the dashboard interface, historical log viewer, and CSV exporter from unauthorized remote actions. Credentials are read dynamically via environment variables (`.env`).
 
 ---
 
@@ -148,13 +158,21 @@ To run the project on your local machine:
    ```bash
    pip install -r requirements.txt
    ```
-2. Start the main Flask server (for database logging and UI hosting):
+2. Create a `.env` file in the project root folder and define your credentials:
+   ```env
+   FLASK_SECRET_KEY=recyprint-super-secret-key-9988
+   DASHBOARD_USER=admin
+   DASHBOARD_PASSWORD=recyprint2026
+   ```
+   *(If the `.env` file is missing, the system will automatically fall back to the default credentials: `admin` / `recyprint2026`).*
+3. Start the main Flask server (for database logging, UI hosting, and session management):
    ```bash
    python app.py
    ```
-3. Connect the ESP32 to the computer via USB and launch the bridge script:
+4. Connect the ESP32 to the computer via USB and launch the bridge script:
    ```bash
    python bridge.py
    ```
-4. Access the interface from any web browser by navigating to:
-   **http://localhost:5000**
+5. Access the interface from any web browser by navigating to:
+   **http://localhost:5000**  
+   *(The system will automatically redirect you to the secure login page).*

@@ -34,6 +34,7 @@ The RecyPrint system was successfully completed and demonstrated as a functional
 - The **CSV export feature** allowed historical sensor logs to be downloaded and analyzed externally.
 - The **closed-loop diameter control** algorithm maintained filament diameter near the 1.75 mm target by automatically adjusting motor speed via the `bridge.py` controller.
 - The **emergency stop** feature triggered correctly when temperature exceeded the 200°C safety threshold.
+- A **secure session-based user authentication system** was implemented to protect the dashboard, logs, and CSV export routes from unauthorized remote operations.
 
 ---
 
@@ -157,39 +158,23 @@ By designing a lightweight, cloud-integrated architecture, the software team eli
 
 ## 8. Ethical, Safety, and Sustainability Considerations
 
-### Ethics
+The RecyPrint project incorporates several ethical, safety, and sustainability considerations throughout its design and implementation to ensure a responsible, secure, and reliable operation.
 
-From an ethical perspective, the RecyPrint system does not involve the collection of personal data or interaction with human subjects. All data transmitted through the system consists exclusively of technical process parameters — namely temperature readings, motor speed values, and filament diameter measurements. Therefore, no privacy or data protection concerns arise within the scope of this project.
+### 8.1 Ethical Considerations
+*   **Privacy and Data Protection:** From an ethical perspective, the RecyPrint system does not collect, process, or store any personal data or interact with human subjects. All transmitted telemetry consists strictly of technical machine parameters—specifically temperature, motor speed, and filament diameter. Thus, no privacy risks or data protection issues exist.
+*   **Open-Source Integrity:** The entire system is built utilizing open-source and transparent technologies (Flask, Paho-MQTT, SQLite, PostgreSQL, Chart.js). This ensures that the code can be fully audited, verified, and extended by other researchers, promoting transparency and collaborative engineering ethics.
 
-Furthermore, the system was built entirely using transparent, well-documented open-source technologies (Flask, Paho-MQTT, PostgreSQL, Chart.js). This ensures that the implementation can be independently reviewed, understood, and further developed by others, which is in line with ethical software engineering practices.
+### 8.2 Safety Considerations
+Safety was treated as a core design requirement rather than an afterthought. Several software-level safety mechanisms were designed and verified:
+*   **Automated Temperature Threshold (200°C Limit):** The local bridge continuously monitors the temperature data. If the nozzle exceeds the 200°C safety limit, the system enters emergency mode, immediately sending shutdown commands (`M0`/`T0`) to turn off the heater and motor without user intervention.
+*   **Immediate Remote Shutdown:** The dashboard includes an emergency Stop button that allows operators to instantly send shutdown directives to the physical machine, enabling rapid manual response to anomalies.
+*   **Secure Remote Access Control:** To prevent unauthorized operators from accessing the controls and triggering the physical extrusion machinery remotely (which poses high thermal and mechanical safety hazards), a secure session-based authentication screen was implemented. Credentials are loaded dynamically via environment variables to prevent password exposure.
+*   **Startup Speed Lock:** The proportional controller in the bridge locks the motor speed at 125 PWM until the filament diameter exceeds 1.0 mm, preventing high-speed motor startups before material reaches the sensor.
+*   **Tare Sensor Calibration:** A dedicated "Tare Gauge" button allows operators to calibrate/zero the optical diameter sensor, preventing sensor drift from causing erratic motor acceleration.
 
-### Safety
-
-Safety was treated as a core design requirement rather than an afterthought in the RecyPrint system. Several concrete software-level safety mechanisms were designed and implemented:
-
-- **Automated Temperature Threshold (200°C Limit):** The backend continuously monitors the temperature data received from the ESP32. If the reading exceeds the 200°C safety threshold, the system immediately enters emergency stop mode. Shutdown commands `M0` (motor stop) and `T0` (heater off) are transmitted directly to the ESP32 via the MQTT broker, halting all extrusion activity without any user intervention.
-
-- **Real-Time Emergency Alert on Dashboard:** When the emergency stop is triggered, the web dashboard displays a clearly visible red "Emergency Stop" alert, ensuring that any user monitoring the system is immediately made aware of the hazardous condition.
-
-- **Immediate Remote Shutdown via Dashboard:** In addition to the automatic threshold-based stop, the system provides a manual Stop button on the dashboard that sends the same `M0` and `T0` shutdown commands instantly. This allows users to stop the extrusion process remotely at any time.
-
-- **Sensor Calibration (Tare):** A dedicated "Tare Gauge" button was implemented to allow single-click zeroing of the diameter sensor via the `Z` command. This prevents inaccurate readings caused by sensor drift from propagating into the closed-loop control algorithm, which could otherwise lead to uncontrolled motor behavior.
-
-- **Closed-Loop Diameter Control with Startup Lock:** The proportional controller in `bridge.py` includes a startup safety condition — motor speed is locked at its initial value (PWM 125) until the filament diameter exceeds 1.0 mm. This prevents uncontrolled high-speed operation before material reaches the sensor, reducing the risk of mechanical stress on the system.
-
-These measures collectively ensure that the system operates within safe boundaries under both normal and fault conditions.
-
-### Sustainability
-
-Sustainability is a foundational motivation for the RecyPrint project. The system is designed to enable the recycling of plastic waste, particularly PET bottle materials, into reusable 3D printing filament. This directly supports the reduction of plastic waste and aligns with circular economy principles, which aim to extend the lifecycle of materials and minimize environmental impact.
-
-From a software and infrastructure perspective, sustainability considerations were also reflected in architectural choices:
-
-- **Hybrid Cloud and Local Storage:** The use of a cloud-based PostgreSQL database (Neon.tech) as the primary storage solution, combined with a local SQLite fallback, ensures data reliability without unnecessary hardware redundancy or resource waste.
-
-- **Lightweight Communication Protocol (MQTT):** The MQTT protocol was chosen for its minimal bandwidth consumption and low overhead compared to alternatives such as HTTP polling. This reduces the energy cost of data transmission, which is especially relevant for systems that operate continuously over extended periods.
-
-Overall, the RecyPrint system demonstrates a responsible approach to ethical software development, operational safety, and environmental sustainability — making it a meaningful contribution both technically and socially.
+### 8.3 Sustainability Considerations
+*   **Circular Economy Alignment:** The system directly supports environmental sustainability by recycling plastic PET bottle waste into high-quality 3D printing filament, reducing plastic pollution and landfill accumulation.
+*   **Resource and Energy Efficiency:** The database uses a hybrid storage strategy (Neon PostgreSQL cloud + local SQLite buffer) to prevent data loss without redundant hardware. Communication is handled via MQTT, which utilizes a lightweight publish-subscribe model that minimizes network bandwidth and reduces overall energy consumption.
 
 ---
 
@@ -203,7 +188,8 @@ The RecyPrint project successfully achieved its primary objective of developing 
 *   **Closed-Loop Process Automation:** Designed and integrated a proportional feedback control loop within the `bridge.py` middleware. This system automatically adjusts the motor speed (PWM) based on live opto-electronic sensor diameter readings, maintaining filament production close to the target 1.75 mm standard without manual intervention.
 *   **Fault-Tolerant Hybrid Data Logging:** Created a resilient data architecture combining a primary cloud-based PostgreSQL database (Neon.tech) with a local, zero-config SQLite database (`local_cache.db`). This hybrid strategy prevents data loss by caching records locally during network dropouts and syncing them to the cloud once connection is restored.
 *   **Multi-Tier Safety Safeguards:** Implemented a software-level emergency shutdown protocol that instantly triggers when the heater exceeds the critical safety threshold of 200°C. The system transmits immediate shutdown directives (`M0`/`T0`) to the ESP32, flags the web dashboard with a prominent red emergency overlay, and suspends closed-loop motor adjustments to prevent hardware damage.
-*   **Enhanced UX & Portability:** Developed a responsive, glassmorphism-themed dark dashboard that includes synchronized real-time graphs for both temperature and diameter. The system also features a dedicated data portal allowing researchers to download historical logs as standardized CSV/Excel spreadsheets with a single click.
+*   **Enhanced UX, Portability & Data Export:** Developed a responsive, glassmorphism-themed dark dashboard that includes synchronized real-time graphs for both temperature and diameter. The system also features a dedicated data portal allowing researchers to download historical logs as standardized CSV/Excel spreadsheets with a single click.
+*   **Secure Web Access & Authentication:** Integrated a Flask session-based user authentication layer that protects all routes (dashboard, logs, CSV export) from unauthorized access, allowing the mechatronics laboratory machinery to be controlled remotely only by verified personnel.
 
 In conclusion, the RecyPrint system demonstrates that modern open-source web technologies and lightweight IoT protocols can be successfully integrated to build reliable, safe, and sustainable industrial recycling prototypes at zero software licensing costs.
 
