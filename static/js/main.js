@@ -45,7 +45,7 @@ const tempChart = new Chart(ctx, {
         scales: {
             y: { 
                 min: 0,
-                max: 200,
+                max: 300,
                 grid: { color: 'rgba(255, 255, 255, 0.05)' } 
             },
             x: { grid: { display: false } }
@@ -108,10 +108,10 @@ mqttClient.on('connect', () => {
     mqttClient.subscribe(TOPIC_ALERTS);
     console.log("MQTT Client Subscribed successfully.");
 
-    // Sync initial UI values with the ESP32 on startup (Auto Mode: T185, M125)
+    // Sync initial UI values with the ESP32 on startup (Auto Mode: T250, M125)
     mqttClient.publish(TOPIC_CONTROL, JSON.stringify({
         type: 'update_targets',
-        target_temperature: 185,
+        target_temperature: 250,
         target_speed: 125
     }));
 });
@@ -186,7 +186,7 @@ btnStart.addEventListener('click', () => {
     mqttClient.publish(TOPIC_CONTROL, JSON.stringify({ 
         type: 'start_extrusion', 
         target_speed: 125,
-        target_temperature: 185
+        target_temperature: 250
     }));
 });
 

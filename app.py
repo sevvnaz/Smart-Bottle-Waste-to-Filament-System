@@ -48,15 +48,19 @@ TOPIC_TELEMETRY = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/sensor_data"
 TOPIC_CONTROL = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/control"
 TOPIC_ALERTS = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/alerts"
 
-mqtt_client = mqtt.Client(client_id="recyprint_backend_logger", protocol=mqtt.MQTTv311)
+# paho-mqtt v2.0+ ve v1.x ile tam uyumluluk için Callback API sürümünü ve benzersiz client_id belirliyoruz
+try:
+    mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="")
+except AttributeError:
+    mqtt_client = mqtt.Client(client_id="", protocol=mqtt.MQTTv311)
 
 # System State (Mocked ESP32 values)
 system_state = {
     'temperature': 25.0,
     'speed': 0.0,
     'diameter': 0.0,
-    'target_temperature': 150.0,
-    'target_speed': 150.0,
+    'target_temperature': 250.0,
+    'target_speed': 125.0,
     'is_extruding': False,
     'status': 'Standby'
 }
@@ -177,7 +181,7 @@ def offline_sync_thread():
 
 
 # === MQTT CALLBACKS ===
-def on_connect(client, userdata, flags, rc):
+def on_connect(client, userdata, flags, rc, properties=None):
     print("Connected to Global MQTT Broker successfully!")
     client.subscribe(TOPIC_CONTROL)
     client.subscribe(TOPIC_TELEMETRY)
@@ -205,24 +209,32 @@ def on_message(client, userdata, msg):
                 system_state['is_extruding'] = False
 
         elif msg.topic == TOPIC_TELEMETRY:
-            if random.random() < 0.2:  # Log 1 in 5 messages
-                log_sensor_data(
-                    payload.get('temperature', 0),
-                    payload.get('speed', 0),
-                    payload.get('diameter', 0)
-                )
+            log_sensor_data(
+                payload.get('temperature', 0),
+                payload.get('speed', 0),
+                payload.get('diameter', 0)
+            )
 
     except Exception as e:
         print(f"MQTT Parsing Error: {e}")
 
 
-mqtt_client.on_connect = on_connect
-mqtt_client.on_message = on_message
+# Callback'leri tanımla (paho-mqtt v2/v1 fallback)
+try:
+    mqtt_client.on_connect = on_connect
+    mqtt_client.on_message = on_message
+except Exception:
+    def on_connect_v1(client, userdata, flags, rc):
+        print("Connected to Global MQTT Broker successfully (v1)!")
+        client.subscribe(TOPIC_CONTROL)
+        client.subscribe(TOPIC_TELEMETRY)
+    mqtt_client.on_connect = on_connect_v1
+    mqtt_client.on_message = on_message
 
 
 # === LOCAL ESP32 SIMULATOR THREAD ===
 def esp32_simulator_thread():
-    CRITICAL_TEMP = 180.0
+    CRITICAL_TEMP = 270.0
     time.sleep(2)
 
     while True:
@@ -293,6 +305,13 @@ def esp32_simulator_thread():
 
 
 # === FLASK ROUTES ===
+
+@app.after_request
+def add_header(r):
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    return r
 
 # Login Required Decorator
 def login_required(f):

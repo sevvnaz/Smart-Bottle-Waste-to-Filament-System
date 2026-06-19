@@ -14,6 +14,7 @@ TOPIC_ALERTS = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/alerts"
 
 # --- OTOMATİK ÇAP KONTROL SİSTEMİ DEĞİŞKENLERİ ---
 auto_mode = False
+motor_enabled = False         # Sıcaklık 250°C'ye ulaşana kadar motorun çalışmasını engellemek için
 current_target_speed = 125.0  # Başlangıç motor hızı
 TARGET_DIAMETER = 1.75        # Hedef filaman çapı (mm)
 MIN_SPEED = 50.0              # Motorun inebileceği en düşük hız
@@ -40,8 +41,8 @@ def update_automatic_control(diameter):
     """
     Filaman çapına göre motor hızını otomatik ayarlayan kapalı döngü kontrolcü.
     """
-    global auto_mode, current_target_speed
-    if not auto_mode:
+    global auto_mode, current_target_speed, motor_enabled
+    if not auto_mode or not motor_enabled:
         return
     
     if diameter > 1.0:
@@ -71,17 +72,18 @@ def update_automatic_control(diameter):
 
 def check_temperature_safety(current_temp):
     """
-    Sıcaklık 200°C limitini aşarsa sistemi otomatik durduran ve alarm veren koruma fonksiyonu.
+    Sıcaklık 270°C limitini aşarsa sistemi otomatik durduran ve alarm veren koruma fonksiyonu.
     """
-    global auto_mode
-    if current_temp > 200.0:
+    global auto_mode, motor_enabled
+    if current_temp > 270.0:
         auto_mode = False
+        motor_enabled = False
         # ESP32'ye acil durdurma yolla (M0, T0)
         if ser.is_open:
             ser.write(b"M0\n")
             time.sleep(0.1)
             ser.write(b"T0\n")
-            print(f"[ACİL DURDURMA] Sıcaklık {current_temp}°C (Limit: 200°C) aşıldı! Sistem kapatıldı.")
+            print(f"[ACİL DURDURMA] Sıcaklık {current_temp}°C (Limit: 270°C) aşıldı! Sistem kapatıldı.")
         
         # Arayüze (dashboard) kırmızı acil durum uyarısı gönder
         alert_payload = {
@@ -93,20 +95,20 @@ def check_temperature_safety(current_temp):
     return False
 
 def on_message(client, userdata, msg):
-    global auto_mode, current_target_speed
+    global auto_mode, current_target_speed, motor_enabled
     try:
         payload = json.loads(msg.payload.decode())
         commands = []
         
         # DASHBOARD KOMUTLARINI ESP32 DİLİNE ÇEVİR
         if payload.get('type') == 'start_extrusion':
-            print("[OTOMATİK SİSTEM] Üretim Başlatıldı! Hedef: 185°C | Başlangıç Hızı: 125")
+            print("[OTOMATİK SİSTEM] Üretim Başlatıldı! Hedef: 250°C | Motor sıcaklık 230°C'ye ulaşınca başlayacak.")
             auto_mode = True
+            motor_enabled = False
             current_target_speed = 125.0
             
-            # ESP32'ye başlangıç komutlarını gönder
-            commands.append("T185\n")
-            commands.append("M125\n")
+            # ESP32'ye sadece hedef sıcaklığı gönder (motoru başlatma komutunu sıcaklık 230'a ulaşınca göndereceğiz)
+            commands.append("T250\n")
             
         elif payload.get('type') == 'update_targets':
             # Arayüzden sürgüleri kaldırdık ama manuel olarak MQTT'den istek gelirse koruma
@@ -120,6 +122,7 @@ def on_message(client, userdata, msg):
         elif payload.get('type') in ['stop_extrusion', 'emergency_stop']:
             print("[OTOMATİK SİSTEM] Üretim Durduruldu! Cihazlar kapatılıyor...")
             auto_mode = False
+            motor_enabled = False
             commands.append("M0\n")
             commands.append("T0\n")
             
@@ -154,7 +157,7 @@ try:
     client.loop_start()
     
     print(f"FİNAL SİSTEM AKTİF: {SERIAL_PORT} üzerinden iletişim kuruldu...")
-    print("Sıcaklık Koruması: 200°C Üstü Acil Kapatma Aktif!")
+    print("Sıcaklık Koruması: 270°C Üstü Acil Kapatma Aktif!")
 
     while True:
         if ser.in_waiting > 0:
@@ -167,15 +170,27 @@ try:
                     payload_data = json.loads(line)
                     current_temp = float(payload_data.get('temperature', 0))
                     
-                    # 200 Derece Üstü Acil Durum Kontrolü
+                    # 270 Derece Üstü Acil Durum Kontrolü
                     is_emergency = check_temperature_safety(current_temp)
                     if is_emergency:
                         payload_data['status'] = 'Error'
                         payload_data['speed'] = 0
                         payload_data['is_extruding'] = False
                     
+                    # Eğer acil durum yoksa ve motor henüz çalıştırılmadıysa sıcaklık kontrolü yap
+                    if not is_emergency and auto_mode and not motor_enabled:
+                        if current_temp >= 230.0:
+                            motor_enabled = True
+                            if ser.is_open:
+                                ser.write(b"M125\n")
+                            print(f"[OTOMATİK SİSTEM] Sıcaklık 230°C'ye ulaştı ({current_temp:.1f}°C). Motor başlatılıyor (Hız: 125)...")
+                            client.publish(TOPIC_ALERTS, json.dumps({
+                                "type": "info",
+                                "message": f"Ön ısıtma sıcaklığına ulaşıldı ({current_temp:.1f}°C). Motor çalıştırılıyor!"
+                            }))
+                    
                     if 'is_extruding' not in payload_data:
-                        payload_data['is_extruding'] = (payload_data.get('speed', 0) > 0)
+                        payload_data['is_extruding'] = (payload_data.get('speed', 0) > 0 or motor_enabled)
                         
                     client.publish(TOPIC_TELEMETRY, json.dumps(payload_data))
                     print(f"📡 MQTT İLETİLDİ (JSON) -> Sıcaklık: {current_temp}°C")
@@ -214,18 +229,30 @@ try:
                         if dia_match:
                             diameter = float(dia_match.group(1))
                             
-                        # 200 Derece Üstü Acil Durum Kontrolü
+                        # 270 Derece Üstü Acil Durum Kontrolü
                         is_emergency = check_temperature_safety(current_temp)
                         if is_emergency:
                             status = "Error"
                             motor_speed = 0
                         else:
+                            # Eğer motor henüz çalıştırılmadıysa sıcaklık kontrolü yap
+                            if auto_mode and not motor_enabled:
+                                if current_temp >= 230.0:
+                                    motor_enabled = True
+                                    if ser.is_open:
+                                        ser.write(b"M125\n")
+                                    print(f"[OTOMATİK SİSTEM] Sıcaklık 230°C'ye ulaştı ({current_temp:.1f}°C). Motor başlatılıyor (Hız: 125)...")
+                                    client.publish(TOPIC_ALERTS, json.dumps({
+                                        "type": "info",
+                                        "message": f"Ön ısıtma sıcaklığına ulaşıldı ({current_temp:.1f}°C). Motor çalıştırılıyor!"
+                                    }))
+                            
                             # Durumu (Status) tahmin et
                             if target_temp == 0 and motor_speed == 0:
                                 status = "Idle"
                             elif current_temp < target_temp - 5.0:
                                 status = "Heating"
-                            elif motor_speed > 0:
+                            elif motor_speed > 0 or motor_enabled:
                                 status = "Extruding"
                             else:
                                 status = "Ready"
@@ -236,7 +263,7 @@ try:
                             "speed": motor_speed,
                             "diameter": diameter,
                             "status": status,
-                            "is_extruding": (motor_speed > 0)
+                            "is_extruding": (motor_speed > 0 or motor_enabled)
                         }
                         
                         # Dashboard'a ve veritabanına loglanması için MQTT'ye fırlat
