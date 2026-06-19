@@ -14,8 +14,9 @@ TOPIC_ALERTS = "recyprint/e6b9c9f22b624b2a8fc42195f2d011f0/alerts"
 
 # --- OTOMATİK ÇAP KONTROL SİSTEMİ DEĞİŞKENLERİ ---
 auto_mode = False
-motor_enabled = False         # Sıcaklık 250°C'ye ulaşana kadar motorun çalışmasını engellemek için
-current_target_speed = 125.0  # Başlangıç motor hızı
+motor_enabled = False         # Sıcaklık 180°C'ye ulaşana kadar motorun çalışmasını engellemek için
+current_temp = 25.0           # Anlık sıcaklık takibi
+current_target_speed = 250.0  # Başlangıç motor hızı
 TARGET_DIAMETER = 1.75        # Hedef filaman çapı (mm)
 MIN_SPEED = 50.0              # Motorun inebileceği en düşük hız
 MAX_SPEED = 250.0             # Motorun çıkabileceği en yüksek hız
@@ -62,13 +63,13 @@ def update_automatic_control(diameter):
                 ser.write(cmd.encode())
                 print(f"[OTOMATİK KONTROL] Çap: {diameter:.2f}mm | Hata: {error:+.2f}mm | Yeni Hız: {int(new_speed)} (Değişim: {int(new_speed) - old_speed:+d})")
     else:
-        # Çap 1.0mm altındaysa filaman henüz sensöre ulaşmamıştır. Başlangıç hızını (125) koru.
-        if int(current_target_speed) != 125:
-            current_target_speed = 125.0
-            cmd = "M125\n"
+        # Çap 1.0mm altındaysa filaman henüz sensöre ulaşmamıştır. Başlangıç hızını (250) koru.
+        if int(current_target_speed) != 250:
+            current_target_speed = 250.0
+            cmd = "M250\n"
             if ser.is_open:
                 ser.write(cmd.encode())
-                print("[OTOMATİK KONTROL] Filaman bekleniyor... Hız 125 olarak sabitlendi.")
+                print("[OTOMATİK KONTROL] Filaman bekleniyor... Hız 250 olarak sabitlendi.")
 
 def check_temperature_safety(current_temp):
     """
@@ -95,29 +96,31 @@ def check_temperature_safety(current_temp):
     return False
 
 def on_message(client, userdata, msg):
-    global auto_mode, current_target_speed, motor_enabled
+    global auto_mode, current_target_speed, motor_enabled, current_temp
     try:
         payload = json.loads(msg.payload.decode())
         commands = []
         
-        # DASHBOARD KOMUTLARINI ESP32 DİLİNE ÇEVİR
         if payload.get('type') == 'start_extrusion':
-            print("[OTOMATİK SİSTEM] Üretim Başlatıldı! Hedef: 250°C | Motor sıcaklık 230°C'ye ulaşınca başlayacak.")
+            print("[OTOMATİK SİSTEM] Üretim Başlatıldı! Hedef: 250°C | Motor sıcaklık 180°C'ye ulaşınca başlayacak.")
             auto_mode = True
             motor_enabled = False
-            current_target_speed = 125.0
+            current_target_speed = 250.0
             
-            # ESP32'ye sadece hedef sıcaklığı gönder (motoru başlatma komutunu sıcaklık 230'a ulaşınca göndereceğiz)
+            # ESP32'ye sadece hedef sıcaklığı gönder (motoru başlatma komutunu sıcaklık 180'e ulaşınca göndereceğiz)
             commands.append("T250\n")
             
         elif payload.get('type') == 'update_targets':
-            # Arayüzden sürgüleri kaldırdık ama manuel olarak MQTT'den istek gelirse koruma
             if 'target_temperature' in payload:
                 commands.append(f"T{int(payload['target_temperature'])}\n")
             if 'target_speed' in payload:
                 esp_speed = int(float(payload['target_speed']))
                 current_target_speed = float(esp_speed)
-                commands.append(f"M{esp_speed}\n")
+                # Sıcaklık 180 derecenin altındaysa motoru çalıştırma komutunu gönderme!
+                if motor_enabled or current_temp >= 180.0:
+                    commands.append(f"M{esp_speed}\n")
+                else:
+                    print(f"[GÜVENLİK] Sıcaklık {current_temp:.1f}°C (Hedef: 180°C) altında olduğu için motor komutu (M{esp_speed}) engellendi.")
                 
         elif payload.get('type') in ['stop_extrusion', 'emergency_stop']:
             print("[OTOMATİK SİSTEM] Üretim Durduruldu! Cihazlar kapatılıyor...")
@@ -179,11 +182,11 @@ try:
                     
                     # Eğer acil durum yoksa ve motor henüz çalıştırılmadıysa sıcaklık kontrolü yap
                     if not is_emergency and auto_mode and not motor_enabled:
-                        if current_temp >= 230.0:
+                        if current_temp >= 180.0:
                             motor_enabled = True
                             if ser.is_open:
-                                ser.write(b"M125\n")
-                            print(f"[OTOMATİK SİSTEM] Sıcaklık 230°C'ye ulaştı ({current_temp:.1f}°C). Motor başlatılıyor (Hız: 125)...")
+                                ser.write(b"M250\n")
+                            print(f"[OTOMATİK SİSTEM] Sıcaklık 180°C'ye ulaştı ({current_temp:.1f}°C). Motor başlatılıyor (Hız: 250)...")
                             client.publish(TOPIC_ALERTS, json.dumps({
                                 "type": "info",
                                 "message": f"Ön ısıtma sıcaklığına ulaşıldı ({current_temp:.1f}°C). Motor çalıştırılıyor!"
@@ -237,11 +240,11 @@ try:
                         else:
                             # Eğer motor henüz çalıştırılmadıysa sıcaklık kontrolü yap
                             if auto_mode and not motor_enabled:
-                                if current_temp >= 230.0:
+                                if current_temp >= 180.0:
                                     motor_enabled = True
                                     if ser.is_open:
-                                        ser.write(b"M125\n")
-                                    print(f"[OTOMATİK SİSTEM] Sıcaklık 230°C'ye ulaştı ({current_temp:.1f}°C). Motor başlatılıyor (Hız: 125)...")
+                                        ser.write(b"M250\n")
+                                    print(f"[OTOMATİK SİSTEM] Sıcaklık 180°C'ye ulaştı ({current_temp:.1f}°C). Motor başlatılıyor (Hız: 250)...")
                                     client.publish(TOPIC_ALERTS, json.dumps({
                                         "type": "info",
                                         "message": f"Ön ısıtma sıcaklığına ulaşıldı ({current_temp:.1f}°C). Motor çalıştırılıyor!"

@@ -60,7 +60,7 @@ system_state = {
     'speed': 0.0,
     'diameter': 0.0,
     'target_temperature': 250.0,
-    'target_speed': 125.0,
+    'target_speed': 250.0,
     'is_extruding': False,
     'status': 'Standby'
 }

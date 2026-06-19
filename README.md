@@ -8,8 +8,8 @@ Proje, temelde **Mekatronik** (donanımsal parçalama, eritme, çekme, soğutma 
 
 ## 🎯 Projenin Ulaştığı Son Nokta (Current Status)
 Yazılım ekibi olarak projenin tüm hedeflerini tamamladık ve donanım entegrasyonunu başarıyla gerçekleştirdik:
-- **Tam Otomatik Kapalı Döngü Çap Kontrolü (Closed-Loop Control):** Filaman çapını **1.75 mm** hedef değerde sabit tutabilmek için `bridge.py` üzerine oransal kontrollü (`Kp = 150.0`) otomatik hız kontrolcüsü entegre edildi. Başlangıçta motor `125` PWM hızıyla başlar ve çap verisine göre otomatik hızlanır veya yavaşlar. (Filaman sensöre girene kadar yani `DIA <= 1.0mm` ise motor hızı başlangıç değerinde kilitlenir).
-- **Yazılımsal Sıcaklık Güvenlik Sistemi (200°C Limit):** ESP32'den gelen anlık sıcaklık verisi `200°C` limitini aştığı anda sistem otomatik olarak acil durdurma moduna geçer, motora ve ısıtıcıya kapatma komutlarını (`M0` / `T0`) gönderir ve Dashboard üzerinde kırmızı renkli "Acil Durum" uyarısı gösterir.
+- **Tam Otomatik Kapalı Döngü Çap Kontrolü (Closed-Loop Control):** Filaman çapını **1.75 mm** hedef değerde sabit tutabilmek için `bridge.py` üzerine oransal kontrollü (`Kp = 150.0`) otomatik hız kontrolcüsü entegre edildi. Başlangıçta motor `250` PWM hızıyla başlar ve çap verisine göre otomatik hızlanır veya yavaşlar. (Filaman sensöre girene kadar yani `DIA <= 1.0mm` ise motor hızı başlangıç değerinde kilitlenir).
+- **Yazılımsal Sıcaklık Güvenlik Sistemi (270°C Limit):** ESP32'den gelen anlık sıcaklık verisi `270°C` limitini aştığı anda sistem otomatik olarak acil durdurma moduna geçer, motora ve ısıtıcıya kapatma komutlarını (`M0` / `T0`) gönderir ve Dashboard üzerinde kırmızı renkli "Acil Durum" uyarısı gösterir.
 - **Tek Tuş Kalibrasyon (Tare):** Ekran üzerindeki yeni "Tare" butonu ile sensör tek tıklamayla sıfırlanabilir (`Z` komutu).
 - **Bulut Veritabanı (Cloud DB):** Lokal SQLite yerine çok daha güvenli ve profesyonel olan **AWS Neon.tech (PostgreSQL)** veritabanına geçiş yapıldı.
 - **Modern Haberleşme (MQTT & WebSocket):** Basit REST API yerine gecikmesiz, anında tepki veren **Native MQTT (broker.emqx.io)** ve WebSocket mimarisi kullanıldı.
@@ -51,8 +51,8 @@ TEMP: 30.5 / 0.0 C | HEAT: 0% | SPD: 0% | DIA: 0.00 mm
 
 ### Dashboard'dan ESP32'ye Giden Komutlar
 Siz Dashboard üzerinden butonlara bastığınızda, `bridge.py` ESP32'ye doğrudan makine dilinde şu komutları yollar:
-- `T185` -> Hedef sıcaklığı 185°C yap (Üretim başladığında otomatik gönderilir).
-- `M125` -> Motor hızını 125 (PWM: 0-255) yap (Başlangıç hızıdır).
+- `T250` -> Hedef sıcaklığı 250°C yap (Üretim başladığında otomatik gönderilir).
+- `M250` -> Motor hızını 250 (PWM: 0-255) yap (Başlangıç hızıdır).
 - `M<hiz>` -> Çap verisine göre otomatik hesaplanan yeni motor hızı komutu.
 - `Z` -> Sensör kalibrasyonu / sıfırlama (TARE GAUGE butonuna basıldığında).
 - `M0` ve `T0` -> Acil Durdurma veya Üretim Durdurulduğunda tüm sistemi kapatır.
@@ -99,8 +99,8 @@ The project is an interdisciplinary machine automation system, fundamentally div
 
 ## 🎯 Current Status & Software Achievements
 As the software team, we have accomplished all project objectives and successfully completed the hardware integration:
-- **Closed-Loop Automatic Diameter Control:** Integrated a proportional feedback controller (`Kp = 150.0`) inside `bridge.py` to keep the filament diameter locked at **1.75 mm**. The motor starts at `125` PWM and automatically speeds up or slows down based on real-time diameter feedback. (Motor speed is locked at 125 if `DIA <= 1.0mm` as a safety startup condition).
-- **Software Temperature Safety Limit (200°C):** If the real-time temperature exceeds `200°C`, the system immediately enters emergency stop mode, sending shutdown commands (`M0` / `T0`) to the ESP32 and displaying a red emergency alert on the Dashboard.
+- **Closed-Loop Automatic Diameter Control:** Integrated a proportional feedback controller (`Kp = 150.0`) inside `bridge.py` to keep the filament diameter locked at **1.75 mm**. The motor starts at `250` PWM and automatically speeds up or slows down based on real-time diameter feedback. (Motor speed is locked at 250 if `DIA <= 1.0mm` as a safety startup condition).
+- **Software Temperature Safety Limit (270°C):** If the real-time temperature exceeds `270°C`, the system immediately enters emergency stop mode, sending shutdown commands (`M0` / `T0`) to the ESP32 and displaying a red emergency alert on the Dashboard.
 - **Single-Click Calibration (Tare):** Added a new "Tare" button to zero/calibrate the diameter sensor via the `Z` command.
 - **Cloud Database:** Transitioned from a local SQLite setup to a highly secure and professional **AWS Neon.tech (PostgreSQL)** database.
 - **Modern Communication (MQTT & WebSocket):** Replaced basic REST APIs with a zero-latency, highly responsive **Native MQTT (broker.emqx.io)** and WebSocket architecture.
@@ -142,8 +142,8 @@ TEMP: 30.5 / 0.0 C | HEAT: 0% | SPD: 0% | DIA: 0.00 mm
 
 ### Commands sent from the Dashboard to the ESP32
 When you interact with the Dashboard, `bridge.py` sends the following direct machine commands to the ESP32:
-- `T185` -> Set target temperature to 185°C (sent automatically on start).
-- `M125` -> Set motor speed to 125 (PWM: 0-255) (initial speed).
+- `T250` -> Set target temperature to 250°C (sent automatically on start).
+- `M250` -> Set motor speed to 250 (PWM: 0-255) (initial speed).
 - `M<speed>` -> Automatically adjusted motor speed based on diameter error.
 - `Z` -> Calibrate/Tare sensor (when TARE GAUGE button is clicked).
 - `M0` and `T0` -> Emergency Stop / Extrusion Stopped. Shuts down the entire system.
