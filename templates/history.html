@@ -94,12 +94,19 @@
 
         <!-- Main Content -->
         <main class="panel glass-panel">
-            <div class="action-bar">
+            <div class="action-bar" style="flex-wrap: wrap; gap: 1rem;">
                 <div>
                     <h2 class="panel-title" style="margin-bottom: 5px; border:none; padding:0;">Historical Sensor Logs</h2>
                     <p style="color:var(--text-muted); font-size:0.9rem;">Viewing the last 100 recorded data points from the system's database.</p>
                 </div>
-                <a href="/export/csv" class="btn-export glow-effect">⬇ Export to Excel (CSV)</a>
+                <div style="display: flex; gap: 0.8rem; align-items: center; background: rgba(0,0,0,0.3); padding: 10px 15px; border-radius: 10px; border: 1px solid var(--glass-border); flex-wrap: wrap;">
+                    <label style="font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-display);">From:</label>
+                    <input type="date" id="start-date" style="padding: 8px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.85rem; outline: none; font-family: var(--font-display);">
+                    <label style="font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-display);">To:</label>
+                    <input type="date" id="end-date" style="padding: 8px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.85rem; outline: none; font-family: var(--font-display);">
+                    <button id="btn-filter-table" class="btn-export glow-effect" style="cursor: pointer; font-size: 0.85rem; padding: 8px 16px; background: rgba(14, 165, 233, 0.15); border-color: var(--accent-primary); color: var(--accent-primary);">🔍 Filter Table</button>
+                    <button id="btn-filter-export" class="btn-export glow-effect" style="cursor: pointer; font-size: 0.85rem; padding: 8px 16px;">⬇ Export CSV</button>
+                </div>
             </div>
 
             <div class="table-container">
@@ -121,33 +128,72 @@
     </div>
 
     <script>
-        // Fetch logs on page load
-        fetch('/api/logs')
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.querySelector('#logs-table tbody');
-                tbody.innerHTML = '';
-                
-                if(data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No sensor data recorded yet.</td></tr>';
-                    return;
-                }
+        function loadLogs(start = '', end = '') {
+            const tbody = document.querySelector('#logs-table tbody');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading records...</td></tr>';
+            
+            let url = '/api/logs';
+            if (start && end) {
+                url += `?start_date=${start}&end_date=${end}`;
+            } else if (start) {
+                url += `?start_date=${start}`;
+            } else if (end) {
+                url += `?end_date=${end}`;
+            }
 
-                data.forEach(log => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td style="color:var(--text-muted);">${log.timestamp}</td>
-                        <td style="font-weight:bold; color:var(--accent-primary);">${log.temperature.toFixed(2)}</td>
-                        <td>${log.speed.toFixed(1)}</td>
-                        <td>${log.diameter.toFixed(3)}</td>
-                    `;
-                    tbody.appendChild(tr);
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    tbody.innerHTML = '';
+                    
+                    if(data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No sensor data recorded in this range.</td></tr>';
+                        return;
+                    }
+
+                    data.forEach(log => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td style="color:var(--text-muted);">${log.timestamp}</td>
+                            <td style="font-weight:bold; color:var(--accent-primary);">${log.temperature.toFixed(2)}</td>
+                            <td>${log.speed.toFixed(1)}</td>
+                            <td>${log.diameter.toFixed(3)}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--danger);">Error loading logs.</td></tr>';
+                    console.error(err);
                 });
-            })
-            .catch(err => {
-                document.querySelector('#logs-table tbody').innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--danger);">Error loading logs.</td></tr>';
-                console.error(err);
-            });
+        }
+
+        // Fetch logs on page load
+        loadLogs();
+
+        // Handle Table Filter
+        document.getElementById('btn-filter-table').addEventListener('click', () => {
+            const start = document.getElementById('start-date').value;
+            const end = document.getElementById('end-date').value;
+            loadLogs(start, end);
+        });
+
+        // Handle CSV export with date filters
+        document.getElementById('btn-filter-export').addEventListener('click', () => {
+            const start = document.getElementById('start-date').value;
+            const end = document.getElementById('end-date').value;
+            let url = '/export/csv';
+            
+            if (start && end) {
+                url += `?start_date=${start}&end_date=${end}`;
+            } else if (start) {
+                url += `?start_date=${start}`;
+            } else if (end) {
+                url += `?end_date=${end}`;
+            }
+            
+            window.location.href = url;
+        });
     </script>
 </body>
 </html>

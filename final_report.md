@@ -170,7 +170,7 @@ Safety was treated as a core design requirement rather than an afterthought. Sev
 *   **Immediate Remote Shutdown:** The dashboard includes an emergency Stop button that allows operators to instantly send shutdown directives to the physical machine, enabling rapid manual response to anomalies.
 *   **Secure Remote Access Control:** To prevent unauthorized operators from accessing the controls and triggering the physical extrusion machinery remotely (which poses high thermal and mechanical safety hazards), a secure session-based authentication screen was implemented. Credentials are loaded dynamically via environment variables to prevent password exposure.
 *   **Startup Speed Lock:** The proportional controller in the bridge locks the motor speed at 250 PWM until the filament diameter exceeds 1.0 mm, preventing high-speed motor startups before material reaches the sensor.
-*   **Tare Sensor Calibration:** A dedicated "Tare Gauge" button allows operators to calibrate/zero the optical diameter sensor, preventing sensor drift from causing erratic motor acceleration.
+*   **Tare Sensor Calibration:** The system supports remote calibration/zeroing of the optical diameter sensor, preventing sensor drift from causing erratic motor acceleration.
 
 ### 8.3 Sustainability Considerations
 *   **Circular Economy Alignment:** The system directly supports environmental sustainability by recycling plastic PET bottle waste into high-quality 3D printing filament, reducing plastic pollution and landfill accumulation.

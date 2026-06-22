@@ -10,7 +10,7 @@ Proje, temelde **Mekatronik** (donanımsal parçalama, eritme, çekme, soğutma 
 Yazılım ekibi olarak projenin tüm hedeflerini tamamladık ve donanım entegrasyonunu başarıyla gerçekleştirdik:
 - **Tam Otomatik Kapalı Döngü Çap Kontrolü (Closed-Loop Control):** Filaman çapını **1.75 mm** hedef değerde sabit tutabilmek için `bridge.py` üzerine oransal kontrollü (`Kp = 150.0`) otomatik hız kontrolcüsü entegre edildi. Başlangıçta motor `250` PWM hızıyla başlar ve çap verisine göre otomatik hızlanır veya yavaşlar. (Filaman sensöre girene kadar yani `DIA <= 1.0mm` ise motor hızı başlangıç değerinde kilitlenir).
 - **Yazılımsal Sıcaklık Güvenlik Sistemi (270°C Limit):** ESP32'den gelen anlık sıcaklık verisi `270°C` limitini aştığı anda sistem otomatik olarak acil durdurma moduna geçer, motora ve ısıtıcıya kapatma komutlarını (`M0` / `T0`) gönderir ve Dashboard üzerinde kırmızı renkli "Acil Durum" uyarısı gösterir.
-- **Tek Tuş Kalibrasyon (Tare):** Ekran üzerindeki yeni "Tare" butonu ile sensör tek tıklamayla sıfırlanabilir (`Z` komutu).
+- **Kalibrasyon Yeteneği (Tare):** Donanım üzerindeki optik sensörü sıfırlamak için kalibrasyon komutu (`Z`) sisteme entegre edilmiştir.
 - **Bulut Veritabanı (Cloud DB):** Lokal SQLite yerine çok daha güvenli ve profesyonel olan **AWS Neon.tech (PostgreSQL)** veritabanına geçiş yapıldı.
 - **Modern Haberleşme (MQTT & WebSocket):** Basit REST API yerine gecikmesiz, anında tepki veren **Native MQTT (broker.emqx.io)** ve WebSocket mimarisi kullanıldı.
 - **Akıllı Donanım Köprüsü (bridge.py):** ESP32'den gelen verileri (JSON veya düz metin fark etmeksizin) algılayıp, Regex ile ayrıştırarak buluta aktaran akıllı bir Python köprüsü yazıldı.
@@ -54,7 +54,7 @@ Siz Dashboard üzerinden butonlara bastığınızda, `bridge.py` ESP32'ye doğru
 - `T250` -> Hedef sıcaklığı 250°C yap (Üretim başladığında otomatik gönderilir).
 - `M250` -> Motor hızını 250 (PWM: 0-255) yap (Başlangıç hızıdır).
 - `M<hiz>` -> Çap verisine göre otomatik hesaplanan yeni motor hızı komutu.
-- `Z` -> Sensör kalibrasyonu / sıfırlama (TARE GAUGE butonuna basıldığında).
+- `Z` -> Sensör kalibrasyonu / sıfırlama (Arka planda otomatik / uzaktan kalibrasyon).
 - `M0` ve `T0` -> Acil Durdurma veya Üretim Durdurulduğunda tüm sistemi kapatır.
 
 ---

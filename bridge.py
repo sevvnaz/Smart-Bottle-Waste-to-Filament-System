@@ -284,6 +284,39 @@ try:
             # 3. DURUM: ESP32 BAŞKA BİR BİLGİ / LOG BASIYORSA
             else:
                 print(f"ESP32 INFO: {line}")
+                
+                # ESP32 Tarafından Gönderilen Uyarı ve Kritik Hata Mesajlarını Algılama ve MQTT ile Dashboard'a Gönderme
+                if "WARN:" in line or "Warning:" in line or "Approaching cutoff" in line:
+                    clean_msg = line.replace("WARN:", "").replace("Warning:", "").strip()
+                    alert_payload = {
+                        "type": "warning",
+                        "message": f"ESP32 Uyarısı: {clean_msg}"
+                    }
+                    client.publish(TOPIC_ALERTS, json.dumps(alert_payload))
+                    print(f"📡 MQTT UYARI GÖNDERİLDİ -> {clean_msg}")
+                    
+                elif "CRITICAL" in line or "!!" in line or "HALT" in line:
+                    clean_msg = line.replace("!!", "").replace("CRITICAL:", "").strip()
+                    
+                    # 1. Publish to alerts topic for toast notification
+                    alert_payload = {
+                        "type": "emergency",
+                        "message": f"ESP32 Kritik Hata: {clean_msg}"
+                    }
+                    client.publish(TOPIC_ALERTS, json.dumps(alert_payload))
+                    print(f"📡 MQTT ACİL DURUM ALARMI GÖNDERİLDİ -> {clean_msg}")
+                    
+                    # 2. Publish to telemetry topic to update UI status and stop extrusion indicators
+                    error_telemetry = {
+                        "temperature": current_temp,
+                        "speed": 0.0,
+                        "diameter": 0.0,
+                        "status": "Error",
+                        "is_extruding": False,
+                        "timestamp": time.strftime('%H:%M:%S')
+                    }
+                    client.publish(TOPIC_TELEMETRY, json.dumps(error_telemetry))
+                    print(f"📡 MQTT TELEMETRİ GÜNCELLEMESİ (HATA DURUMU) GÖNDERİLDİ")
 
 except Exception as e:
     print(f"Bağlantı Hatası: {e}")

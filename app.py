@@ -365,11 +365,33 @@ def history_page():
 @login_required
 def get_logs():
     try:
+        start_date = request.args.get('start_date', '').strip()
+        end_date = request.args.get('end_date', '').strip()
+
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            'SELECT temperature, speed, diameter, timestamp FROM sensor_data ORDER BY id DESC LIMIT 100'
-        )
+
+        if start_date and end_date:
+            if start_date > end_date:
+                start_date, end_date = end_date, start_date
+            cursor.execute(
+                'SELECT temperature, speed, diameter, timestamp FROM sensor_data WHERE timestamp BETWEEN %s AND %s ORDER BY id DESC LIMIT 200',
+                (start_date + " 00:00:00", end_date + " 23:59:59")
+            )
+        elif start_date:
+            cursor.execute(
+                'SELECT temperature, speed, diameter, timestamp FROM sensor_data WHERE timestamp >= %s ORDER BY id DESC LIMIT 200',
+                (start_date + " 00:00:00",)
+            )
+        elif end_date:
+            cursor.execute(
+                'SELECT temperature, speed, diameter, timestamp FROM sensor_data WHERE timestamp <= %s ORDER BY id DESC LIMIT 200',
+                (end_date + " 23:59:59",)
+            )
+        else:
+            cursor.execute(
+                'SELECT temperature, speed, diameter, timestamp FROM sensor_data ORDER BY id DESC LIMIT 100'
+            )
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -392,11 +414,34 @@ def get_logs():
 @login_required
 def export_csv():
     try:
+        start_date = request.args.get('start_date', '').strip()
+        end_date = request.args.get('end_date', '').strip()
+
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            'SELECT id, temperature, speed, diameter, timestamp FROM sensor_data ORDER BY id ASC'
-        )
+
+        if start_date and end_date:
+            # Swap if user accidentally reversed start and end dates
+            if start_date > end_date:
+                start_date, end_date = end_date, start_date
+            cursor.execute(
+                'SELECT id, temperature, speed, diameter, timestamp FROM sensor_data WHERE timestamp BETWEEN %s AND %s ORDER BY id ASC',
+                (start_date + " 00:00:00", end_date + " 23:59:59")
+            )
+        elif start_date:
+            cursor.execute(
+                'SELECT id, temperature, speed, diameter, timestamp FROM sensor_data WHERE timestamp >= %s ORDER BY id ASC',
+                (start_date + " 00:00:00",)
+            )
+        elif end_date:
+            cursor.execute(
+                'SELECT id, temperature, speed, diameter, timestamp FROM sensor_data WHERE timestamp <= %s ORDER BY id ASC',
+                (end_date + " 23:59:59",)
+            )
+        else:
+            cursor.execute(
+                'SELECT id, temperature, speed, diameter, timestamp FROM sensor_data ORDER BY id ASC'
+            )
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
