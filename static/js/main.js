@@ -128,7 +128,6 @@ mqttClient.on('message', (topic, message) => {
         const payload = JSON.parse(message.toString());
         
         if (topic === TOPIC_TELEMETRY) {
-            lastTelemetryTime = Date.now();
             liveTemp.innerText = payload.temperature.toFixed(1);
             liveSpeed.innerText = payload.speed.toFixed(1);
             liveDiameter.innerText = payload.diameter.toFixed(3);
@@ -194,35 +193,4 @@ btnStop.addEventListener('click', () => {
     mqttClient.publish(TOPIC_CONTROL, JSON.stringify({ type: 'stop_extrusion' }));
 });
 
-// === HEARTBEAT / KEEP-ALIVE MONITOR ===
-// Automatically detects ESP32 halt or disconnection without modifying the bridge code
-let lastTelemetryTime = Date.now();
-setInterval(() => {
-    // If no telemetry packet is received for more than 3 seconds (3000ms)
-    if (Date.now() - lastTelemetryTime > 3000) {
-        // 1. Update status badge to Halted / Offline
-        const badge = document.getElementById('system-badge');
-        badge.innerText = "Halted / Offline";
-        badge.style.color = "var(--danger)";
-        
-        // 2. Reset buttons to allow restart attempts
-        btnStart.style.opacity = '1';
-        btnStart.innerText = "START EXTRUSION";
-        btnStop.style.opacity = '0.5';
-        
-        // 3. Show emergency toast once to notify user
-        if (!window.offlineToastShown) {
-            const toastContainer = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.style.background = 'rgba(239, 68, 68, 0.95)';
-            toast.style.borderLeft = '6px solid #b91c1c';
-            toast.innerHTML = `🚨 <strong>EMERGENCY:</strong> Cihaz bağlantısı kesildi veya Güvenlik Kilidi (Overheat Halt) devreye girdi!`;
-            toastContainer.appendChild(toast);
-            setTimeout(() => { toast.remove(); }, 8000);
-            window.offlineToastShown = true;
-        }
-    } else {
-        window.offlineToastShown = false;
-    }
-}, 1000);
+
